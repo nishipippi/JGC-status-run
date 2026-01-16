@@ -139,6 +139,20 @@ const App: React.FC = () => {
       // User can click spin again
   };
 
+  // Manual Navigation via Map Click
+  const handleAirportClick = (airport: Airport) => {
+    // Prevent interaction during active states to avoid glitches
+    if (isSpinning || pendingAirport || animatingDestination) return;
+    
+    // Don't re-navigate to current location
+    if (airport.iata === currentAirport.iata) return;
+
+    // Trigger standard flight animation to the selected airport
+    // This allows manual "teleportation" or flying routes not in standard list
+    // Useful for debugging or getting out of dead ends
+    startFlightAnimation(airport);
+  };
+
   const handleReset = () => {
       setCurrentAirport(AIRPORTS[STARTING_AIRPORT]);
       setHistory([]);
@@ -203,6 +217,7 @@ const App: React.FC = () => {
                 excludeRadiusKm={settings.excludeRadiusKm}
                 animatingDestination={animatingDestination}
                 onAnimationComplete={finalizeMove}
+                onAirportClick={handleAirportClick}
             />
             
             {/* Overlay Statistics for Mobile */}

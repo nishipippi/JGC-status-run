@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Airport, TravelHistoryItem } from '../types';
 import { AIRPORTS } from '../constants';
@@ -80,6 +80,7 @@ interface MapProps {
   excludeRadiusKm: number;
   animatingDestination: Airport | null;
   onAnimationComplete: () => void;
+  onAirportClick: (airport: Airport) => void;
 }
 
 // --- Flight Animation Component ---
@@ -167,7 +168,8 @@ const Map: React.FC<MapProps> = ({
   validDestinations, 
   excludeRadiusKm, 
   animatingDestination,
-  onAnimationComplete
+  onAnimationComplete,
+  onAirportClick
 }) => {
   const airportList = Object.values(AIRPORTS);
 
@@ -261,9 +263,6 @@ const Map: React.FC<MapProps> = ({
           if (isCurrent) iconToUse = currentIcon;
           else if (airport.size === 'BIG') iconToUse = hubIcon;
           
-          // Hide current marker if we are mid-flight (optional, but looks cleaner if plane leaves the spot)
-          // But usually we keep the "Previous" spot until arrival.
-          
           return (
             <Marker
               key={airport.iata}
@@ -271,12 +270,30 @@ const Map: React.FC<MapProps> = ({
               icon={iconToUse}
               opacity={isCurrent || isDest || airport.size === 'BIG' || isAnimatingTarget ? 1 : 0.4}
               zIndexOffset={isCurrent ? 1000 : isAnimatingTarget ? 900 : 0}
+              eventHandlers={{
+                click: () => onAirportClick(airport)
+              }}
             >
-              <Popup>
+              <Tooltip direction="top" offset={[0, -20]} opacity={0.95} className="font-sans">
                 <div className="text-center">
-                  <h3 className="font-bold text-lg">{airport.iata}</h3>
-                  <p className="text-sm">{airport.name}</p>
-                  {isCurrent && <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full mt-1">現在地</span>}
+                  <span className="font-bold block text-slate-800">{airport.name}</span>
+                  <span className="text-xs text-slate-500 font-mono">[{airport.iata}]</span>
+                </div>
+              </Tooltip>
+              <Popup>
+                <div className="text-center p-1">
+                  <h3 className="font-bold text-lg text-slate-800">{airport.iata}</h3>
+                  <p className="text-sm text-slate-600 mb-2">{airport.name}</p>
+                  {isCurrent ? (
+                    <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full font-bold">現在地</span>
+                  ) : (
+                    <button 
+                      onClick={() => onAirportClick(airport)}
+                      className="px-3 py-1 bg-indigo-600 text-white text-xs rounded shadow hover:bg-indigo-700 transition-colors"
+                    >
+                      ここへ移動
+                    </button>
+                  )}
                 </div>
               </Popup>
             </Marker>
