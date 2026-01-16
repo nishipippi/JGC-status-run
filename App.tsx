@@ -23,6 +23,11 @@ const App: React.FC = () => {
   
   // State for Retry Mode
   const [pendingAirport, setPendingAirport] = useState<Airport | null>(null);
+
+  // State for Flight Animation
+  // When this is set, the map shows the plane flying. 
+  // When animation completes, we actually commit the data.
+  const [animatingDestination, setAnimatingDestination] = useState<Airport | null>(null);
   
   // Calculate valid destinations based on current airport and settings
   const validDestinations = useMemo(() => {
@@ -74,8 +79,16 @@ const App: React.FC = () => {
     setIsSpinning(true);
   };
 
-  // Helper to commit the move
-  const commitMove = (destination: Airport) => {
+  // Helper: Triggers the animation phase
+  const startFlightAnimation = (destination: Airport) => {
+    setAnimatingDestination(destination);
+  };
+
+  // Helper: Actually updates the data (called after animation finishes)
+  const finalizeMove = () => {
+    if (!animatingDestination) return;
+    
+    const destination = animatingDestination;
     const dist = calculateDistance(currentAirport.lat, currentAirport.lng, destination.lat, destination.lng);
     const earned = Math.round(dist * 1.0); // 100% accumulation rate
     const duration = calculateFlightDuration(dist);
@@ -93,20 +106,19 @@ const App: React.FC = () => {
     ]);
     
     setCurrentAirport(destination);
+    setAnimatingDestination(null); // Clear animation state
   };
 
-  // Step 2: Called by Controls component when the visual animation finishes
+  // Step 2: Called by Controls component when the visual roulette animation finishes
   const handleSpinComplete = () => {
     if (!targetAirport) return;
 
     if (settings.retryMode) {
         // In retry mode, we don't commit yet. We wait for user confirmation.
         setPendingAirport(targetAirport);
-        // We clear targetAirport so Controls knows animation is done, 
-        // but Controls will see pendingAirport and show the result.
     } else {
-        // Standard mode: Commit immediately
-        commitMove(targetAirport);
+        // Standard mode: Start flight animation immediately
+        startFlightAnimation(targetAirport);
     }
     
     setTargetAirport(null); // Reset target
@@ -116,7 +128,7 @@ const App: React.FC = () => {
   // Step 3 (Retry Mode Only): User accepts the result
   const handleConfirmPending = () => {
       if (pendingAirport) {
-          commitMove(pendingAirport);
+          startFlightAnimation(pendingAirport);
           setPendingAirport(null);
       }
   };
@@ -133,6 +145,7 @@ const App: React.FC = () => {
       setTargetAirport(null);
       setIsSpinning(false);
       setPendingAirport(null);
+      setAnimatingDestination(null);
       setSettings({
         bigAirportRatio: 0.6,
         excludeRadiusKm: 50,
@@ -188,6 +201,8 @@ const App: React.FC = () => {
                 history={history} 
                 validDestinations={destIatas} 
                 excludeRadiusKm={settings.excludeRadiusKm}
+                animatingDestination={animatingDestination}
+                onAnimationComplete={finalizeMove}
             />
             
             {/* Overlay Statistics for Mobile */}

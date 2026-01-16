@@ -38,6 +38,39 @@
         width: 100%;
         height: 100%;
         z-index: 0;
+        background: #f8fafc;
+      }
+
+      /* Animated Dash Line */
+      .flight-path-line {
+        stroke-dasharray: 10, 10;
+        animation: dash-animation 30s linear infinite;
+      }
+      
+      @keyframes dash-animation {
+        from {
+          stroke-dashoffset: 200;
+        }
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      /* Pulse Effect for current location */
+      @keyframes pulse-ring {
+        0% { transform: scale(0.8); opacity: 0.8; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+      
+      .pulse-ring {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: rgba(220, 38, 38, 0.6);
+        animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
       }
     </style>
     <script type="importmap">
