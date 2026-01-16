@@ -53,16 +53,24 @@ interface MapProps {
 }
 
 // MapUpdater component to handle programmatic map movements
-// Now accepts lat/lng individually to ensure stable dependency checking
 const MapUpdater: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
   const map = useMap();
   
+  // マウント時に地図サイズを再計算して表示崩れを防ぐ
   useEffect(() => {
-    // Invalidate size to ensure map renders correctly if container size changed
+    // 即時実行
     map.invalidateSize();
     
-    // Fly to the new coordinates
-    // Using zoom level 6 to show context, or maintain current zoom if preferred
+    // レイアウト確定待ちのための遅延実行
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [map]);
+  
+  useEffect(() => {
+    // 座標変更時の移動アニメーション
     map.flyTo([lat, lng], 6, { 
       animate: true, 
       duration: 1.5,
@@ -77,10 +85,10 @@ const Map: React.FC<MapProps> = ({ currentAirport, history, validDestinations, e
   const airportList = Object.values(AIRPORTS);
 
   return (
-    <div className="h-full w-full rounded-xl overflow-hidden shadow-inner border border-slate-200">
+    <div className="h-full w-full rounded-xl overflow-hidden shadow-inner border border-slate-200 bg-slate-100">
       <MapContainer
         center={[currentAirport.lat, currentAirport.lng]}
-        zoom={5}
+        zoom={6}
         scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
         attributionControl={false}
